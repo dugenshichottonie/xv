@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CosmeticCategorySelector } from '@/components/ui/cosmetic-category-selector';
+import { Textarea } from '@/components/ui/textarea';
 
 import { type Dictionary } from '@/types/dictionary';
 
