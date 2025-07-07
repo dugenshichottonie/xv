@@ -1,27 +1,20 @@
-export interface Color {
-  value: string;
-  label: string;
-  personalColor: 'blue' | 'yellow' | 'neutral';
-}
+import { ColorAlias } from '@/stores/cosmetics';
 
-export const colors: Color[] = [
-  { value: 'red', label: 'Red', personalColor: 'yellow' },
-  { value: 'pink', label: 'Pink', personalColor: 'blue' },
-  { value: 'coral-pink', label: 'Coral Pink', personalColor: 'yellow' },
-  { value: 'orange', label: 'Orange', personalColor: 'yellow' },
-  { value: 'yellow', label: 'Yellow', personalColor: 'yellow' },
-  { value: 'beige', label: 'Beige', personalColor: 'yellow' },
-  { value: 'brown', label: 'Brown', personalColor: 'yellow' },
-  { value: 'khaki', label: 'Khaki', personalColor: 'yellow' },
-  { value: 'green', label: 'Green', personalColor: 'yellow' },
-  { value: 'blue', label: 'Blue', personalColor: 'blue' },
-  { value: 'navy', label: 'Navy', personalColor: 'blue' },
-  { value: 'purple', label: 'Purple', personalColor: 'blue' },
-  { value: 'lavender', label: 'Lavender', personalColor: 'blue' },
-  { value: 'bordeaux', label: 'Bordeaux', personalColor: 'blue' },
-  { value: 'gray', label: 'Gray', personalColor: 'blue' },
-  { value: 'silver', label: 'Silver', personalColor: 'blue' },
-  { value: 'gold', label: 'Gold', personalColor: 'yellow' },
-  { value: 'white', label: 'White', personalColor: 'neutral' },
-  { value: 'black', label: 'Black', personalColor: 'neutral' },
+export const initialColors: ColorAlias[] = [
+  { canonicalName: 'Red', aliases: ['Red', 'レッド', '赤'], personalColor: 'neutral' },
+  { canonicalName: 'Pink', aliases: ['Pink', 'ピンク'], personalColor: 'neutral' },
+  { canonicalName: 'Orange', aliases: ['Orange', 'オレンジ'], personalColor: 'yellow' },
+  { canonicalName: 'Yellow', aliases: ['Yellow', 'イエロー', '黄'], personalColor: 'yellow' },
+  { canonicalName: 'Green', aliases: ['Green', 'グリーン', '緑'], personalColor: 'neutral' },
+  { canonicalName: 'Blue', aliases: ['Blue', 'ブルー', '青'], personalColor: 'blue' },
+  { canonicalName: 'Purple', aliases: ['Purple', 'パープル', '紫'], personalColor: 'blue' },
+  { canonicalName: 'Brown', aliases: ['Brown', 'ブラウン', '茶'], personalColor: 'yellow' },
+  { canonicalName: 'Beige', aliases: ['Beige', 'ベージュ'], personalColor: 'yellow' },
+  { canonicalName: 'Gold', aliases: ['Gold', 'ゴールド', '金'], personalColor: 'yellow' },
+  { canonicalName: 'Silver', aliases: ['Silver', 'シルバー', '銀'], personalColor: 'blue' },
+  { canonicalName: 'Black', aliases: ['Black', 'ブラック', '黒'], personalColor: 'neutral' },
+  { canonicalName: 'White', aliases: ['White', 'ホワイト', '白'], personalColor: 'neutral' },
+  { canonicalName: 'Gray', aliases: ['Gray', 'グレー', '灰色'], personalColor: 'neutral' },
+  { canonicalName: 'Clear', aliases: ['Clear', 'クリア', '透明'], personalColor: 'neutral' },
+  { canonicalName: 'Multi', aliases: ['Multi', 'マルチカラー', '多色'], personalColor: 'neutral' },
 ];

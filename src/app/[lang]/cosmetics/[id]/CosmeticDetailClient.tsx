@@ -1,6 +1,6 @@
 'use client';
 
-import { useAppStore, Cosmetic } from '../../../../stores/cosmetics';
+import { useAppStore, Cosmetic, PersonalColor } from '../../../../stores/cosmetics';
 import { type Locale } from '@root/i18n-config';
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
@@ -10,6 +10,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ColorCombobox } from '@/components/ui/color-combobox';
+import { TextCombobox } from '@/components/ui/text-combobox';
+import { CosmeticCategorySelector } from '@/components/ui/cosmetic-category-selector';
+import { BrandCombobox } from '@/components/ui/brand-combobox';
+import { NewColorDialog } from '@/components/ui/new-color-dialog';
+import { ImageTextExtractor } from '@/components/ui/image-text-extractor';
 import { useState } from 'react';
 
 import { type Dictionary } from '@/types/dictionary';
@@ -21,7 +26,7 @@ interface CosmeticDetailClientProps {
 }
 
 export default function CosmeticDetailClient({ dict, lang, id }: CosmeticDetailClientProps) {
-  const { cosmetics, makeupLooks, updateCosmetic } = useAppStore();
+  const { cosmetics, makeupLooks, updateCosmetic, addUserColor, addUserBrand, addUserCategory, userBrands, userCategories } = useAppStore();
   const initialCosmetic = cosmetics.find((c) => c.id === id);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -35,9 +40,12 @@ export default function CosmeticDetailClient({ dict, lang, id }: CosmeticDetailC
   const [purchaseDate, setPurchaseDate] = useState(initialCosmetic?.purchaseDate || '');
   const [expiryDate, setExpiryDate] = useState(initialCosmetic?.expiryDate || '');
   const [purchaseCount, setPurchaseCount] = useState<number | undefined>(initialCosmetic?.purchaseCount);
-  const [personalColor, setPersonalColor] = useState<'blue' | 'yellow' | 'neutral'>(initialCosmetic?.personalColor || 'neutral');
+  const [personalColor, setPersonalColor] = useState<PersonalColor>(initialCosmetic?.personalColor || 'neutral');
   const [photos, setPhotos] = useState<string[]>(initialCosmetic?.photo || []);
   const [memo, setMemo] = useState(initialCosmetic?.memo || '');
+
+  const [isNewColorDialogOpen, setIsNewColorDialogOpen] = useState(false);
+  const [newColorName, setNewColorName] = useState('');
 
   if (!initialCosmetic) {
     return <div className="container mx-auto p-4 text-center">{dict.cosmeticNotFound}</div>;
@@ -118,7 +126,7 @@ export default function CosmeticDetailClient({ dict, lang, id }: CosmeticDetailC
     neutral: 'bg-pink-100',
   };
 
-  const personalColorLabels = {
+  const personalColorLabels: Record<PersonalColor, { ja: string; en: string }> = {
     blue: {
       ja: dict.blueBase,
       en: dict.blueBase,
@@ -133,27 +141,38 @@ export default function CosmeticDetailClient({ dict, lang, id }: CosmeticDetailC
     },
   };
 
-  const getDominantPersonalColor = (usedCosmetics: string[], allCosmetics: Cosmetic[]): keyof typeof personalColorMap => {
+  const getDominantPersonalColor = (usedCosmetics: string[], allCosmetics: Cosmetic[]): PersonalColor => {
     const personalColors = usedCosmetics.map(cosmeticId => {
       const cosmetic = allCosmetics.find(c => c.id === cosmeticId);
       return cosmetic ? cosmetic.personalColor : null;
-    }).filter(Boolean) as (keyof typeof personalColorMap)[];
+    }).filter(Boolean) as PersonalColor[];
 
     if (personalColors.length === 0) return 'neutral';
 
     const counts = personalColors.reduce((acc, color) => {
       acc[color] = (acc[color] || 0) + 1;
       return acc;
-    }, {} as Record<keyof typeof personalColorMap, number>);
+    }, {} as Record<PersonalColor, number>);
 
-    const sortedColors = Object.keys(counts).sort((a, b) => counts[b as keyof typeof personalColorMap] - counts[a as keyof typeof personalColorMap]);
+    const sortedColors = Object.keys(counts).sort((a, b) => counts[b as PersonalColor] - counts[a as PersonalColor]);
 
-    return sortedColors[0] as keyof typeof personalColorMap;
+    return sortedColors[0] as PersonalColor;
   };
 
   const relatedMakeupLooks = makeupLooks.filter((look) =>
     look.usedCosmetics.includes(initialCosmetic.id)
   );
+
+  const handleNewColor = (colorName: string) => {
+    setNewColorName(colorName);
+    setIsNewColorDialogOpen(true);
+  };
+
+  const handleSaveNewColor = (colorName: string, pc: PersonalColor) => {
+    addUserColor({ name: colorName, personalColor: pc });
+    setColor(colorName);
+    setPersonalColor(pc);
+  };
 
   return (
     <div className="container mx-auto p-4">
@@ -208,15 +227,26 @@ export default function CosmeticDetailClient({ dict, lang, id }: CosmeticDetailC
             <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="brand">{dict.brand}</Label>
-                <Input id="brand" value={brand} onChange={(e) => setBrand(e.target.value)} required />
+                <BrandCombobox
+                  value={brand}
+                  onChange={setBrand}
+                  dict={dict}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="name">{dict.name}</Label>
                 <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
               </div>
               <div className="space-y-2">
+                <ImageTextExtractor dict={dict} onTextExtracted={(text) => console.log('Extracted:', text)} />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="category">{dict.category}</Label>
-                <Input id="category" value={category} onChange={(e) => setCategory(e.target.value)} required />
+                <CosmeticCategorySelector
+                  value={category}
+                  onChange={setCategory}
+                  dict={dict}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="color">{dict.color}</Label>
@@ -226,6 +256,7 @@ export default function CosmeticDetailClient({ dict, lang, id }: CosmeticDetailC
                     setColor(value);
                     setPersonalColor(pc);
                   }}
+                  dict={dict}
                 />
               </div>
               <div className="space-y-2">
@@ -340,6 +371,7 @@ export default function CosmeticDetailClient({ dict, lang, id }: CosmeticDetailC
           </div>
         </CardContent>
       </Card>
+      
     </div>
   );
 }

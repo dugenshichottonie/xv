@@ -65,4 +65,12 @@ export interface Dictionary {
   tags: string;
   addTagPlaceholder: string;
   filterByTags: string;
+  addNewBrand: string;
+  addNewCategory: string;
+  duplicateCosmeticFound: string;
+  noDuplicateCosmeticFound: string;
+  confirmAdd: string;
+  daysRemaining: string;
+  daysAgo: string;
+  notSet: string;
 }

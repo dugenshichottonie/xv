@@ -27,11 +27,17 @@ export default function NewMakeupLookClient({ dict, lang }: NewMakeupLookClientP
   const [situation, setSituation] = useState('');
   const [season, setSeason] = useState<'spring' | 'summer' | 'autumn' | 'winter' | 'all'>('all');
   const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
   const [memo, setMemo] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const addMakeupLook = useAppStore((state) => state.addMakeupLook);
   const allCosmetics = useAppStore((state) => state.cosmetics);
   const router = useRouter();
+
+  const filteredCosmetics = allCosmetics.filter(
+    (cosmetic) => !selectedCategory || cosmetic.category === selectedCategory
+  );
 
   const situations = [
     { value: 'daily', label: dict.situationDaily },
@@ -81,10 +87,10 @@ export default function NewMakeupLookClient({ dict, lang }: NewMakeupLookClientP
     );
   };
 
-  const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && e.currentTarget.value.trim() !== '') {
-      setTags([...tags, e.currentTarget.value.trim()]);
-      e.currentTarget.value = '';
+  const handleAddTag = () => {
+    if (tagInput.trim() !== '') {
+      setTags([...tags, tagInput.trim()]);
+      setTagInput('');
     }
   };
 
@@ -148,11 +154,17 @@ export default function NewMakeupLookClient({ dict, lang }: NewMakeupLookClientP
             </div>
             <div className="space-y-2">
               <Label htmlFor="tags">{dict.tags}</Label>
-              <Input
-                id="tags"
-                placeholder={dict.addTagPlaceholder}
-                onKeyDown={handleAddTag}
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="tags"
+                  placeholder={dict.addTagPlaceholder}
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                />
+                <Button type="button" onClick={handleAddTag}>
+                  {dict.addTagButton}
+                </Button>
+              </div>
               <div className="flex flex-wrap gap-2 mt-2">
                 {tags.map((tag, index) => (
                   <span key={index} className="flex items-center bg-gray-200 rounded-full px-3 py-1 text-sm">
@@ -195,31 +207,55 @@ export default function NewMakeupLookClient({ dict, lang }: NewMakeupLookClientP
                 ))}
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>{dict.usedCosmetics}</Label>
-              <CosmeticCategorySelector
-                selectedCosmetics={selectedCosmeticIds}
-                onCosmeticChange={handleCosmeticSelection}
-                dict={dict}
-              />
-              <div className="grid grid-cols-2 gap-2">
-                {allCosmetics
-                  .filter((cosmetic) => selectedCosmeticIds.includes(cosmetic.id))
-                  .map((cosmetic) => (
-                    <div key={cosmetic.id} className="flex items-center space-x-2">
+            <div className="space-y-4">
+              {/* Part 1: Selecting Cosmetics */}
+              <div className="space-y-2">
+                <Label>{dict.addUsedCosmetics || 'Add Used Cosmetics'}</Label>
+                <CosmeticCategorySelector
+                  onCategoryChange={setSelectedCategory}
+                  dict={dict}
+                />
+                <div className="border rounded-md p-2 h-64 overflow-y-auto">
+                  {filteredCosmetics.map((cosmetic) => (
+                    <div
+                      key={cosmetic.id}
+                      className="flex items-center justify-between p-2 rounded-md"
+                    >
+                      <label htmlFor={`select-${cosmetic.id}`} className="flex-grow cursor-pointer">{cosmetic.brand} - {cosmetic.name}</label>
                       <Checkbox
-                        id={`cosmetic-${cosmetic.id}`}
-                        checked={true}
+                        id={`select-${cosmetic.id}`}
+                        checked={selectedCosmeticIds.includes(cosmetic.id)}
                         onCheckedChange={() => handleCosmeticSelection(cosmetic.id)}
                       />
-                      <label
-                        htmlFor={`cosmetic-${cosmetic.id}`}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        {cosmetic.brand} - {cosmetic.name}
-                      </label>
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* Part 2: Staging Area (Selected Cosmetics) */}
+              <div className="space-y-2">
+                <Label>{dict.usedCosmetics}</Label>
+                <div className="border rounded-md p-2 space-y-2">
+                  {selectedCosmeticIds.length > 0 ? (
+                    allCosmetics
+                      .filter((cosmetic) => selectedCosmeticIds.includes(cosmetic.id))
+                      .map((cosmetic) => (
+                        <div key={cosmetic.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
+                          <span>{cosmetic.category} - {cosmetic.brand} - {cosmetic.name}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleCosmeticSelection(cosmetic.id)}
+                          >
+                            {dict.remove || 'Remove'}
+                          </Button>
+                        </div>
+                      ))
+                  ) : (
+                    <p className="text-sm text-gray-500">{dict.noCosmeticsSelected || 'No cosmetics selected.'}</p>
+                  )}
+                </div>
               </div>
             </div>
             <Button type="submit">{dict.addMakeupLook}</Button>

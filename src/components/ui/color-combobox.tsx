@@ -1,109 +1,84 @@
 'use client';
 
 import * as React from 'react';
-import { Check, ChevronsUpDown } from 'lucide-react';
-
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { colors } from '@/lib/colors';
+import { TextCombobox } from './text-combobox';
+import { useAppStore, ColorAlias } from '@/stores/cosmetics';
+import { initialColors } from '@/lib/colors';
+import { NewColorDialog } from './new-color-dialog'; // Import NewColorDialog
+import { type Dictionary } from '@/types/dictionary'; // Import Dictionary type
 
 interface ColorComboboxProps {
   value: string;
-  onChange: (value: string, personalColor: 'blue' | 'yellow' | 'neutral') => void;
+  onChange: (value: string, personalColor: ColorAlias['personalColor']) => void;
+  dict: Dictionary; // Add dict prop
 }
 
-export function ColorCombobox({ value, onChange }: ColorComboboxProps) {
-  const [open, setOpen] = React.useState(false);
-  const [inputValue, setInputValue] = React.useState(value);
+export function ColorCombobox({ value, onChange, dict }: ColorComboboxProps) {
+  const { userColors, addUserColor } = useAppStore();
+  const [showNewColorDialog, setShowNewColorDialog] = React.useState(false);
+  const [newColorName, setNewColorName] = React.useState('');
 
-  const handleSelect = (currentValue: string) => {
-    const selectedColor = colors.find((color) => color.value === currentValue);
-    if (selectedColor) {
-      setInputValue(selectedColor.label);
-      onChange(selectedColor.value, selectedColor.personalColor);
-    } else {
-      // If no matching color is found, treat the input value as a custom color
-      // and assign a default personalColor (e.g., 'neutral')
-      onChange(currentValue, 'neutral');
-    }
-    setOpen(false);
+  const allColorAliases = React.useMemo(() => {
+    const combined = [...initialColors, ...userColors];
+    // Ensure uniqueness based on canonicalName, prioritizing userColors if canonical names are the same
+    const uniqueMap = new Map<string, ColorAlias>();
+    combined.forEach(colorAlias => {
+      if (colorAlias && typeof colorAlias === 'object' && 'canonicalName' in colorAlias && typeof colorAlias.canonicalName === 'string') {
+        uniqueMap.set(colorAlias.canonicalName.toLowerCase(), colorAlias);
+      }
+    });
+    return Array.from(uniqueMap.values());
+  }, [userColors]);
+
+  const allDisplayColors = React.useMemo(() => {
+    const displayNames = new Set<string>();
+    allColorAliases.forEach(colorAlias => {
+      colorAlias.aliases.forEach(alias => displayNames.add(alias));
+    });
+    return Array.from(displayNames).sort((a, b) => a.localeCompare(b));
+  }, [allColorAliases]);
+
+  const handleNewColor = (newColorName: string) => {
+    setNewColorName(newColorName);
+    setShowNewColorDialog(true);
   };
 
-  
+  const handleSaveNewColor = (colorName: string, personalColor: ColorAlias['personalColor'], aliases: string[]) => {
+    addUserColor({ canonicalName: colorName, aliases: aliases, personalColor: personalColor });
+    onChange(colorName, personalColor); // Set the new color as the selected value
+    setShowNewColorDialog(false);
+  };
 
-  const handleInputBlur = () => {
-    const matchedColor = colors.find(
-      (color) => color.label.toLowerCase() === inputValue.toLowerCase()
-    );
-    if (matchedColor) {
-      onChange(matchedColor.value, matchedColor.personalColor);
-    } else {
-      onChange(inputValue, 'neutral'); // Treat as neutral if not in list
+  const handleColorChange = (selectedColor: string) => {
+    let resolvedPersonalColor: ColorAlias['personalColor'] = 'neutral';
+
+    // Iterate through all known color aliases to find a match and resolve personal color
+    for (const colorAlias of allColorAliases) {
+      if (colorAlias.aliases.some(alias => alias.toLowerCase() === selectedColor.toLowerCase())) {
+        resolvedPersonalColor = colorAlias.personalColor;
+        break; // Found a match, no need to continue searching
+      }
     }
+    onChange(selectedColor, resolvedPersonalColor); // Pass the selected color directly and its resolved personal color
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-full justify-between"
-        >
-          {value
-            ? colors.find((color) => color.value === value)?.label || value
-            : 'Select color...'}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-        <Command>
-          <CommandInput
-            placeholder="Search color..."
-            value={inputValue}
-            onValueChange={setInputValue}
-            onBlur={handleInputBlur}
-          />
-          <CommandEmpty>No color found.</CommandEmpty>
-          <CommandList>
-            <CommandGroup>
-              {colors
-                .filter((color) =>
-                  color.label.toLowerCase().includes(inputValue.toLowerCase())
-                )
-                .map((color) => (
-                  <CommandItem
-                    key={color.value}
-                    value={color.value}
-                    onSelect={handleSelect}
-                  >
-                    <Check
-                      className={cn(
-                        'mr-2 h-4 w-4',
-                        value === color.value ? 'opacity-100' : 'opacity-0'
-                      )}
-                    />
-                    {color.label}
-                  </CommandItem>
-                ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+    <>
+      <TextCombobox
+        value={value}
+        onChange={handleColorChange}
+        options={allDisplayColors}
+        placeholder="Select or add color..."
+        emptyMessage="No color found. Press Enter to add."
+        onNewItem={handleNewColor}
+      />
+      <NewColorDialog
+        open={showNewColorDialog}
+        onOpenChange={setShowNewColorDialog}
+        colorName={newColorName}
+        onSave={handleSaveNewColor}
+        dict={dict}
+      />
+    </>
   );
 }

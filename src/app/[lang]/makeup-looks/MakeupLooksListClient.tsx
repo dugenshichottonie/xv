@@ -7,6 +7,7 @@ import { type Locale } from '@root/i18n-config';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Image from 'next/image';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Lightbox } from '@/components/ui/lightbox';
@@ -19,54 +20,6 @@ interface MakeupLooksListClientProps {
 }
 
 export default function MakeupLooksListClient({ dict, lang }: MakeupLooksListClientProps) {
-  const {
-    makeupLooks,
-    deleteMakeupLook,
-    cosmetics,
-    makeupListViewMode,
-    lookbookIndex,
-    lookbookPhotoIndex,
-    setMakeupListViewMode,
-  } = useAppStore();
-  const [selectedLooks, setSelectedLooks] = useState<string[]>([]);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [filterTagInput, setFilterTagInput] = useState('');
-  const [isHeaderVisible, setIsHeaderVisible] = useState(true); // For mobile responsiveness
-
-  // Lightbox states
-  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-  const [lightboxPhotos, setLightboxPhotos] = useState<string[]>([]);
-  const [lightboxInitialIndex, setLightboxInitialIndex] = useState(0);
-
-  const handleTagFilterChange = (tag: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
-  };
-
-  const handleFilterTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilterTagInput(e.target.value);
-  };
-
-  const handleFilterTagSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && filterTagInput.trim() !== '') {
-      handleTagFilterChange(filterTagInput.trim());
-      setFilterTagInput('');
-    }
-  };
-
-  const filteredMakeupLooks = makeupLooks.filter((look) => {
-    if (selectedTags.length === 0) return true;
-    if (!look.tags) return false;
-    return selectedTags.every((tag) => look.tags!.includes(tag));
-  });
-
-  const personalColorMap = {
-    blue: 'bg-blue-100',
-    yellow: 'bg-yellow-100',
-    neutral: 'bg-pink-100',
-  };
-
   const personalColorLabels = {
     blue: {
       ja: dict.blueBase,
@@ -80,6 +33,44 @@ export default function MakeupLooksListClient({ dict, lang }: MakeupLooksListCli
       ja: dict.neutral,
       en: dict.neutral,
     },
+  };
+  const {
+    makeupLooks,
+    deleteMakeupLook,
+    cosmetics,
+    makeupListViewMode,
+    lookbookIndex,
+    lookbookPhotoIndex,
+    setMakeupListViewMode,
+  } = useAppStore();
+  const [selectedLooks, setSelectedLooks] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true); // For mobile responsiveness
+
+  // Lightbox states
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [lightboxPhotos, setLightboxPhotos] = useState<string[]>([]);
+  const [lightboxInitialIndex, setLightboxInitialIndex] = useState(0);
+
+  const handleTagFilterChange = (tag: string) => {
+    setSelectedTags((prev) => {
+      const newSelectedTags = prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag];
+      // Reset lookbook index when filter changes
+      useAppStore.setState({ lookbookIndex: 0, lookbookPhotoIndex: 0 });
+      return newSelectedTags;
+    });
+  };
+
+  const filteredMakeupLooks = makeupLooks.filter((look) => {
+    if (selectedTags.length === 0) return true;
+    if (!look.tags) return false;
+    return selectedTags.every((tag) => look.tags!.includes(tag));
+  });
+
+  const personalColorMap = {
+    blue: 'bg-blue-100',
+    yellow: 'bg-yellow-100',
+    neutral: 'bg-pink-100',
   };
 
   const getDominantPersonalColor = (usedCosmetics: string[], allCosmetics: Cosmetic[]): keyof typeof personalColorMap => {
@@ -127,31 +118,31 @@ export default function MakeupLooksListClient({ dict, lang }: MakeupLooksListCli
   };
 
   const handleNextPhoto = () => {
-    const currentLook = makeupLooks[lookbookIndex];
+    if (filteredMakeupLooks.length === 0) return;
+    const currentLook = filteredMakeupLooks[useAppStore.getState().lookbookIndex];
     if (!currentLook || !currentLook.photo || currentLook.photo.length === 0) return;
 
-    if (lookbookPhotoIndex < currentLook.photo.length - 1) {
-      useAppStore.setState({ lookbookPhotoIndex: lookbookPhotoIndex + 1 });
+    if (useAppStore.getState().lookbookPhotoIndex < currentLook.photo.length - 1) {
+      useAppStore.setState({ lookbookPhotoIndex: useAppStore.getState().lookbookPhotoIndex + 1 });
     } else {
-      // Move to next look, reset photo index
       useAppStore.setState({ lookbookPhotoIndex: 0 });
       useAppStore.setState((state) => ({
-        lookbookIndex: state.lookbookIndex === makeupLooks.length - 1 ? 0 : state.lookbookIndex + 1,
+        lookbookIndex: state.lookbookIndex === filteredMakeupLooks.length - 1 ? 0 : state.lookbookIndex + 1,
       }));
     }
   };
 
   const handlePrevPhoto = () => {
-    const currentLook = makeupLooks[lookbookIndex];
+    if (filteredMakeupLooks.length === 0) return;
+    const currentLook = filteredMakeupLooks[useAppStore.getState().lookbookIndex];
     if (!currentLook || !currentLook.photo || currentLook.photo.length === 0) return;
 
-    if (lookbookPhotoIndex > 0) {
-      useAppStore.setState({ lookbookPhotoIndex: lookbookPhotoIndex - 1 });
+    if (useAppStore.getState().lookbookPhotoIndex > 0) {
+      useAppStore.setState({ lookbookPhotoIndex: useAppStore.getState().lookbookPhotoIndex - 1 });
     } else {
-      // Move to previous look, set photo index to last photo of that look
       useAppStore.setState((state) => {
-        const newIndex = state.lookbookIndex === 0 ? makeupLooks.length - 1 : state.lookbookIndex - 1;
-        useAppStore.setState({ lookbookPhotoIndex: makeupLooks[newIndex].photo.length - 1 });
+        const newIndex = state.lookbookIndex === 0 ? filteredMakeupLooks.length - 1 : state.lookbookIndex - 1;
+        useAppStore.setState({ lookbookPhotoIndex: filteredMakeupLooks[newIndex].photo.length - 1 });
         return { lookbookIndex: newIndex };
       });
     }
@@ -196,22 +187,15 @@ export default function MakeupLooksListClient({ dict, lang }: MakeupLooksListCli
           </div>
         </div>
 
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold mb-2">{dict.filterByTags}</h3>
-          <Input
-            type="text"
-            placeholder={dict.addTagPlaceholder}
-            value={filterTagInput}
-            onChange={handleFilterTagInputChange}
-            onKeyDown={handleFilterTagSubmit}
-            className="mb-2"
-          />
-          <div className="flex flex-wrap gap-2">
-            {Array.from(new Set(makeupLooks.flatMap(look => look.tags || []))).map(tag => (
+        <div className="mb-4 flex items-center gap-4">
+          <h3 className="text-lg font-semibold">{dict.filterByTags}</h3>
+          <div className="flex flex-wrap items-center gap-2">
+            {Array.from(new Set(makeupLooks.flatMap(look => look.tags || []))).map((tag) => (
               <Button
                 key={tag}
-                variant={selectedTags.includes(tag) ? 'default' : 'outline'}
+                variant={selectedTags.includes(tag) ? "default" : "outline"}
                 onClick={() => handleTagFilterChange(tag)}
+                className="h-auto px-3 py-1.5"
               >
                 {tag}
               </Button>
@@ -255,6 +239,51 @@ export default function MakeupLooksListClient({ dict, lang }: MakeupLooksListCli
                       </div>
                     )}
                     <p className="text-xs text-gray-600 mt-2">{personalColorLabel}</p>
+                    {look.tags && look.tags.length > 0 && (
+                      <div className="mt-2 flex flex-wrap items-center gap-1">
+                        {look.tags.slice(0, 3).map((tag) => (
+                          <Button
+                            key={tag}
+                            variant={selectedTags.includes(tag) ? 'default' : 'outline'}
+                            size="sm"
+                            className="h-auto px-2 py-1 text-xs cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleTagFilterChange(tag);
+                            }}
+                          >
+                            {tag}
+                          </Button>
+                        ))}
+                        {look.tags.length > 3 && (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <button
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-xs text-gray-500 hover:underline cursor-pointer"
+                              >
+                                ...
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex flex-wrap gap-1">
+                                {look.tags.map((tag) => (
+                                  <Button
+                                    key={tag}
+                                    variant={selectedTags.includes(tag) ? 'default' : 'outline'}
+                                    size="sm"
+                                    className="h-auto px-2 py-1 text-xs cursor-pointer"
+                                    onClick={() => handleTagFilterChange(tag)}
+                                  >
+                                    {tag}
+                                  </Button>
+                                ))}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        )}
+                      </div>
+                    )}
                     <Link href={`/${lang}/makeup-looks/${look.id}`} className="text-blue-500 hover:underline text-sm mt-2 block">{dict.viewDetails}</Link>
                   </CardContent>
                 </Card>
@@ -346,7 +375,7 @@ export default function MakeupLooksListClient({ dict, lang }: MakeupLooksListCli
                               onClick={(e) => e.stopPropagation()}
                               className="text-blue-300 hover:text-blue-100 text-xs block truncate"
                             >
-                              {cosmetic.category}
+                              {cosmetic.category} - {cosmetic.brand} - {cosmetic.name}
                             </Link>
                           ))}
                         </div>

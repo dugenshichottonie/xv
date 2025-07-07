@@ -1,119 +1,87 @@
-
 'use client';
 
 import * as React from 'react';
-import { Check, ChevronsUpDown } from 'lucide-react';
-
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { useAppStore } from '@/stores/cosmetics';
-import { type Dictionary } from '../../types/dictionary';
+import { TextCombobox } from './text-combobox';
+import { useAppStore, CategoryAlias } from '@/stores/cosmetics';
+import { initialCategories } from '@/lib/initial-categories';
+import { NewBrandCategoryDialog } from './new-brand-category-dialog'; // Import NewBrandCategoryDialog
+import { type Dictionary } from '@/types/dictionary'; // Import Dictionary type
 
 interface CosmeticCategorySelectorProps {
-  selectedCosmetics: string[];
-  onCosmeticChange: (cosmeticId: string) => void;
-  dict: Dictionary;
+  value?: string;
+  onChange?: (value: string) => void;
+  onCategoryChange?: (value: string | null) => void;
+  dict: Dictionary; // Add dict prop
 }
 
-export function CosmeticCategorySelector({
-  selectedCosmetics,
-  onCosmeticChange,
-  dict,
-}: CosmeticCategorySelectorProps) {
-  const [open, setOpen] = React.useState(false);
-  const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
-  const { cosmetics } = useAppStore();
+export function CosmeticCategorySelector({ value, onChange, onCategoryChange, dict }: CosmeticCategorySelectorProps) {
+  const { userCategories, addUserCategory } = useAppStore();
+  const [showNewCategoryDialog, setShowNewCategoryDialog] = React.useState(false);
+  const [newCategoryName, setNewCategoryName] = React.useState('');
 
-  const categories = [...new Set(cosmetics.map((c) => c.category))];
+  const allCategoryAliases = React.useMemo(() => {
+    const combined = [...initialCategories, ...userCategories];
+    // Ensure uniqueness based on canonicalName, prioritizing userCategories if canonical names are the same
+    const uniqueMap = new Map<string, CategoryAlias>();
+    combined.forEach(categoryAlias => {
+      if (categoryAlias && typeof categoryAlias === 'object' && 'canonicalName' in categoryAlias && typeof categoryAlias.canonicalName === 'string') {
+        uniqueMap.set(categoryAlias.canonicalName.toLowerCase(), categoryAlias);
+      }
+    });
+    return Array.from(uniqueMap.values());
+  }, [userCategories]);
 
-  const handleSelectCategory = (category: string) => {
-    setSelectedCategory(category);
+  const allDisplayCategories = React.useMemo(() => {
+    const displayNames = new Set<string>();
+    allCategoryAliases.forEach(categoryAlias => {
+      categoryAlias.aliases.forEach(alias => displayNames.add(alias));
+    });
+    return Array.from(displayNames).sort((a, b) => a.localeCompare(b));
+  }, [allCategoryAliases]);
+
+  const handleNewCategory = (newCategoryName: string) => {
+    setNewCategoryName(newCategoryName);
+    setShowNewCategoryDialog(true);
   };
 
-  const handleSelectCosmetic = (cosmeticId: string) => {
-    onCosmeticChange(cosmeticId);
-    // Optionally close the popover after selection
-    // setOpen(false); 
+  const handleSaveNewCategory = (categoryName: string, aliases: string[]) => {
+    addUserCategory({ canonicalName: categoryName, aliases: aliases });
+    if (onChange) {
+      onChange(categoryName); // Set the new category as the selected value
+    }
+    if (onCategoryChange) {
+      onCategoryChange(categoryName);
+    }
+    setShowNewCategoryDialog(false);
+  };
+
+  const handleCategoryChange = (selectedCategory: string) => {
+    if (onChange) {
+      onChange(selectedCategory);
+    }
+    if (onCategoryChange) {
+      onCategoryChange(selectedCategory);
+    }
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-full justify-between"
-        >
-          {dict.selectCosmetics || 'Select cosmetics...'}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-        <Command>
-          {!selectedCategory ? (
-            <>
-              <CommandInput placeholder={dict.searchCategory || "Search category..."} />
-              <CommandEmpty>{dict.noCategoryFound || "No category found."}</CommandEmpty>
-              <CommandList>
-                <CommandGroup>
-                  {categories.map((category) => (
-                    <CommandItem
-                      key={category}
-                      value={category}
-                      onSelect={() => handleSelectCategory(category)}
-                    >
-                      {category}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </>
-          ) : (
-            <>
-              <CommandInput placeholder={dict.searchCosmetic || "Search cosmetic..."} />
-              <CommandEmpty>{dict.noCosmeticFound || "No cosmetic found."}</CommandEmpty>
-              <CommandList>
-                <CommandGroup>
-                  <Button variant="link" onClick={() => setSelectedCategory(null)}>{dict.backToCategories || "Back to categories"}</Button>
-                  {cosmetics
-                    .filter((c) => c.category === selectedCategory)
-                    .map((cosmetic) => (
-                      <CommandItem
-                        key={cosmetic.id}
-                        value={cosmetic.id}
-                        onSelect={() => handleSelectCosmetic(cosmetic.id)}
-                      >
-                        <Check
-                          className={cn(
-                            'mr-2 h-4 w-4',
-                            selectedCosmetics.includes(cosmetic.id)
-                              ? 'opacity-100'
-                              : 'opacity-0'
-                          )}
-                        />
-                        {cosmetic.brand} - {cosmetic.name}
-                      </CommandItem>
-                    ))}
-                </CommandGroup>
-              </CommandList>
-            </>
-          )}
-        </Command>
-      </PopoverContent>
-    </Popover>
+    <>
+      <TextCombobox
+        value={value}
+        onChange={handleCategoryChange}
+        options={allDisplayCategories}
+        placeholder="Select or add category..."
+        emptyMessage="No category found. Press Enter to add."
+        onNewItem={handleNewCategory}
+      />
+      <NewBrandCategoryDialog
+        open={showNewCategoryDialog}
+        onOpenChange={setShowNewCategoryDialog}
+        itemName={newCategoryName}
+        onSave={handleSaveNewCategory}
+        dict={dict}
+        type="category"
+      />
+    </>
   );
 }

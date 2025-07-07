@@ -34,12 +34,11 @@ export async function generateMetadata({
 
 export default async function RootLayout({
   children,
-  params,
+  params: { lang },
 }: {
   children: React.ReactNode;
-  params: any;
+  params: { lang: Locale };
 }) {
-  const lang = params.lang as Locale;
   const dict: Dictionary = await getDictionary(lang);
 
   return (
@@ -61,6 +60,11 @@ export default async function RootLayout({
                   <NavigationMenuItem>
                     <Link href={`/${lang}/makeup-looks`} className={navigationMenuTriggerStyle()}>
                       {dict.makeupLooksList}
+                    </Link>
+                  </NavigationMenuItem>
+                  <NavigationMenuItem>
+                    <Link href={`/${lang}/settings`} className={navigationMenuTriggerStyle()}>
+                      {dict.settings || 'Settings'}
                     </Link>
                   </NavigationMenuItem>
                 </NavigationMenuList>
