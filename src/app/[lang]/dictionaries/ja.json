@@ -106,5 +106,9 @@
   "restoreError": "データの復元中にエラーが発生しました。ファイル形式を確認してください。",
   "remove": "削除",
   "noCosmeticsSelected": "コスメが選択されていません。",
-  "addUsedCosmetics": "使用したコスメの追加"
+  "addUsedCosmetics": "使用したコスメの追加",
+  "notFound": {
+    "title": "ページが見つかりません",
+    "description": "お探しのページは見つかりませんでした。"
+  }
 }

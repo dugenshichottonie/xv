@@ -34,11 +34,12 @@ export async function generateMetadata({
 
 export default async function RootLayout({
   children,
-  params: { lang },
+  params,
 }: {
   children: React.ReactNode;
   params: { lang: Locale };
 }) {
+  const { lang } = params;
   const dict: Dictionary = await getDictionary(lang);
 
   return (
@@ -69,7 +70,7 @@ export default async function RootLayout({
                   </NavigationMenuItem>
                 </NavigationMenuList>
               </NavigationMenu>
-              <Link href={lang === "en" ? "/ja" : "/en"} passHref>
+              <Link href={lang === "en" ? "/" : "/en"} passHref>
                 <Button variant="outline">{lang === "en" ? "日本語" : "English"}</Button>
               </Link>
             </div>

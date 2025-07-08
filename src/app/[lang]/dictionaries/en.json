@@ -106,5 +106,9 @@
   "extractedTextPlaceholder": "Extracted text will appear here...",
   "copyText": "Copy Text",
   "copiedToClipboard": "Copied to clipboard!",
-  "ocrPlaceholder": "Text extraction will appear here..."
+  "ocrPlaceholder": "Text extraction will appear here...",
+  "notFound": {
+    "title": "Page Not Found",
+    "description": "The page you are looking for does not exist."
+  }
 }
