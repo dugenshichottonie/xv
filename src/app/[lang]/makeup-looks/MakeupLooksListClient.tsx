@@ -5,7 +5,6 @@ import { useAppStore, Cosmetic } from '../../../stores/cosmetics';
 import Link from 'next/link';
 import { type Locale } from '@root/i18n-config';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Image from 'next/image';

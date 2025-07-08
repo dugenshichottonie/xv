@@ -3,7 +3,7 @@ import { type Locale } from '../../../../../i18n-config';
 import MakeupLookDetailClient from './MakeupLookDetailClient';
 import { type Dictionary } from '@/types/dictionary';
 
-export default async function MakeupLookDetailPage({ params }: { params: any }) {
+export default async function MakeupLookDetailPage({ params }: { params: { lang: Locale; id: string } }) {
   const lang = params.lang as Locale;
   const id = params.id as string;
   const dict: Dictionary = await getDictionary(lang);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useAppStore, Cosmetic, MakeupLook } from '../../../../stores/cosmetics';
+import { useAppStore, MakeupLook } from '../../../../stores/cosmetics';
 import { type Locale } from '@root/i18n-config';
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';

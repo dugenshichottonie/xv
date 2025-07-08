@@ -9,10 +9,9 @@ import { type Dictionary } from '@/types/dictionary';
 
 interface ImageTextExtractorProps {
   dict: Dictionary;
-  onTextExtracted: (text: string) => void; // This prop is for future OCR integration
 }
 
-export function ImageTextExtractor({ dict, onTextExtracted }: ImageTextExtractorProps) {
+export function ImageTextExtractor({ dict }: ImageTextExtractorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [extractedText, setExtractedText] = useState<string>('');

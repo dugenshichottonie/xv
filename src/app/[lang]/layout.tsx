@@ -22,7 +22,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: {
-  params: any;
+  params: { lang: Locale };
 }): Promise<Metadata> {
   const lang = params.lang as Locale;
   const dict: Dictionary = await getDictionary(lang);

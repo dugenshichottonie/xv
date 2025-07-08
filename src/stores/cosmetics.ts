@@ -238,41 +238,50 @@ export const useAppStore = create<AppState>()(
     {
       name: 'cosme-zukan-storage', // localStorageに保存されるキー名
       version: 2, // Increment version when schema changes
-      migrate: (persistedState: any, version) => {
+      migrate: (persistedState: unknown, version) => {
+        // Type guard for persistedState to be an object
+        if (typeof persistedState !== 'object' || persistedState === null) {
+          return {} as AppState; // Return a default empty state if it's not an object
+        }
+
+        const state = persistedState as Partial<AppState>; // Assert to Partial<AppState> for initial access
+
         if (version === 0) {
           // If migrating from version 0 (where userBrands/userCategories didn't exist or were different)
           // Ensure userBrands and userCategories are arrays
-          if (!Array.isArray(persistedState.userBrands)) {
-            persistedState.userBrands = [];
+          if (!Array.isArray(state.userBrands)) {
+            state.userBrands = [];
           }
-          if (!Array.isArray(persistedState.userCategories)) {
-            persistedState.userCategories = [];
+          if (!Array.isArray(state.userCategories)) {
+            state.userCategories = [];
           }
           // Also ensure userCategories is an array of objects if it was just strings
-          if (Array.isArray(persistedState.userCategories) && persistedState.userCategories.some((c: any) => typeof c === 'string')) {
-            persistedState.userCategories = persistedState.userCategories.map((c: any) => ({ canonicalName: c, aliases: [c] }));
+          if (Array.isArray(state.userCategories) && state.userCategories.some((c) => typeof c === 'string')) {
+            state.userCategories = state.userCategories.map((c) => ({ canonicalName: c as string, aliases: [c as string] }));
           }
           // Also ensure userColors is an array of objects if it was just strings
-          if (Array.isArray(persistedState.userColors) && persistedState.userColors.some((c: any) => typeof c === 'string' || ('name' in c && typeof c.name === 'string'))) {
-            persistedState.userColors = persistedState.userColors.map((c: any) => {
-              const name = typeof c === 'string' ? c : c.name;
-              const personalColor = c.personalColor || 'neutral';
+          if (Array.isArray(state.userColors) && state.userColors.some((c) => typeof c === 'string' || (typeof c === 'object' && c !== null && 'name' in c && typeof (c as any).name === 'string'))) {
+            state.userColors = state.userColors.map((c) => {
+              const name = typeof c === 'string' ? c : (c as any).name;
+              const personalColor = (c as any).personalColor || 'neutral';
               return { canonicalName: name, aliases: [name], personalColor };
             });
           }
         }
         if (version < 2) {
           // Migrate cosmetics to ensure personalColor is valid
-          if (Array.isArray(persistedState.cosmetics)) {
-            persistedState.cosmetics = persistedState.cosmetics.map((cosmetic: any) => {
-              if (!['blue', 'yellow', 'neutral'].includes(cosmetic.personalColor)) {
+          if (Array.isArray(state.cosmetics)) {
+            state.cosmetics = state.cosmetics.map((cosmetic) => {
+              // Assert cosmetic to a type that might have personalColor
+              const c = cosmetic as { personalColor?: string };
+              if (!['blue', 'yellow', 'neutral'].includes(c.personalColor as string)) {
                 return { ...cosmetic, personalColor: 'neutral' };
               }
               return cosmetic;
-            });
+            }) as Cosmetic[]; // Assert back to Cosmetic[]
           }
         }
-        return persistedState;
+        return state as AppState;
       },
     }
   )

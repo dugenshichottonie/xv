@@ -73,7 +73,7 @@ export default function SettingsClient({ dict }: SettingsClientProps) {
             store.restoreState(restoredState);
             alert(dict.restoreSuccess || 'Data restored successfully!');
           }
-        } catch (error) {
+        } catch (e) {
           alert(dict.restoreError || 'Error restoring data. Please check the file format.');
         }
       };

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { type Dictionary } from '@/types/dictionary';
 
-export default async function Home({ params }: { params: any }) {
+export default async function Home({ params }: { params: { lang: Locale } }) {
   const lang = params.lang as Locale;
   console.log('Current lang:', lang);
   const dict: Dictionary = await getDictionary(lang);

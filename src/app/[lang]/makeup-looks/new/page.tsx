@@ -3,7 +3,7 @@ import { type Locale } from '@root/i18n-config';
 import NewMakeupLookClient from './NewMakeupLookClient';
 import { type Dictionary } from '@/types/dictionary';
 
-export default async function NewMakeupLookPage({ params }: { params: any }) {
+export default async function NewMakeupLookPage({ params }: { params: { lang: Locale } }) {
   const lang = params.lang as Locale;
   const dict: Dictionary = await getDictionary(lang);
 

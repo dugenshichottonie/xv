@@ -11,10 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
 import { ColorCombobox } from '@/components/ui/color-combobox';
-import { TextCombobox } from '@/components/ui/text-combobox';
 import { BrandCombobox } from '@/components/ui/brand-combobox';
 import { Textarea } from '@/components/ui/textarea';
-import { NewColorDialog } from '@/components/ui/new-color-dialog';
 import { CosmeticCategorySelector } from '@/components/ui/cosmetic-category-selector';
 import { ImageTextExtractor } from '@/components/ui/image-text-extractor';
 
@@ -40,8 +38,7 @@ export default function NewCosmeticClient({ dict, lang }: NewCosmeticClientProps
   const [photos, setPhotos] = useState<string[]>([]);
   const [memo, setMemo] = useState('');
   const addCosmetic = useAppStore((state) => state.addCosmetic);
-  const addUserColor = useAppStore((state) => state.addUserColor);
-  const { userCategories, addUserCategory, checkDuplicateCosmetic, updateCosmetic, updateCosmeticWithDuplicate } = useAppStore();
+  const { checkDuplicateCosmetic, updateCosmeticWithDuplicate } = useAppStore();
   const router = useRouter();
 
   const [duplicateCosmetic, setDuplicateCosmetic] = useState<Cosmetic | undefined>(undefined);

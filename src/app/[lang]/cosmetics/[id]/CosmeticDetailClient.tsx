@@ -10,10 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ColorCombobox } from '@/components/ui/color-combobox';
-import { TextCombobox } from '@/components/ui/text-combobox';
 import { CosmeticCategorySelector } from '@/components/ui/cosmetic-category-selector';
 import { BrandCombobox } from '@/components/ui/brand-combobox';
-import { NewColorDialog } from '@/components/ui/new-color-dialog';
 import { ImageTextExtractor } from '@/components/ui/image-text-extractor';
 import { useState } from 'react';
 
@@ -26,7 +24,7 @@ interface CosmeticDetailClientProps {
 }
 
 export default function CosmeticDetailClient({ dict, lang, id }: CosmeticDetailClientProps) {
-  const { cosmetics, makeupLooks, updateCosmetic, addUserColor, addUserBrand, addUserCategory, userBrands, userCategories } = useAppStore();
+  const { cosmetics, makeupLooks, updateCosmetic, addUserColor } = useAppStore();
   const initialCosmetic = cosmetics.find((c) => c.id === id);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -43,9 +41,6 @@ export default function CosmeticDetailClient({ dict, lang, id }: CosmeticDetailC
   const [personalColor, setPersonalColor] = useState<PersonalColor>(initialCosmetic?.personalColor || 'neutral');
   const [photos, setPhotos] = useState<string[]>(initialCosmetic?.photo || []);
   const [memo, setMemo] = useState(initialCosmetic?.memo || '');
-
-  const [isNewColorDialogOpen, setIsNewColorDialogOpen] = useState(false);
-  const [newColorName, setNewColorName] = useState('');
 
   if (!initialCosmetic) {
     return <div className="container mx-auto p-4 text-center">{dict.cosmeticNotFound}</div>;
@@ -162,17 +157,6 @@ export default function CosmeticDetailClient({ dict, lang, id }: CosmeticDetailC
   const relatedMakeupLooks = makeupLooks.filter((look) =>
     look.usedCosmetics.includes(initialCosmetic.id)
   );
-
-  const handleNewColor = (colorName: string) => {
-    setNewColorName(colorName);
-    setIsNewColorDialogOpen(true);
-  };
-
-  const handleSaveNewColor = (colorName: string, pc: PersonalColor) => {
-    addUserColor({ name: colorName, personalColor: pc });
-    setColor(colorName);
-    setPersonalColor(pc);
-  };
 
   return (
     <div className="container mx-auto p-4">
