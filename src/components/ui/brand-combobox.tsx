@@ -56,6 +56,12 @@ export function BrandCombobox({ value, onChange, dict }: BrandComboboxProps) {
     for (const brandAlias of allBrandAliases) {
       if (brandAlias.aliases.some(alias => alias.toLowerCase() === selectedBrand.toLowerCase())) {
         onChange(selectedBrand); // Pass the selected brand directly to the parent
+        return; // Exit the function once a match is found and handled
+      }
+    }
+    // If no match was found in aliases, it means the selectedBrand itself is the canonical name or a new brand.
+    // In this case, we still want to call onChange with the selectedBrand.
+    onChange(selectedBrand);
   };
 
   return (
